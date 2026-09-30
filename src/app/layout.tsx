@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { VideoProcessingProvider } from "@/app/video-processing-provider";
+import { AuthProvider } from "@/app/auth-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,7 +30,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full an tialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <VideoProcessingProvider>{children}</VideoProcessingProvider>
+        <AuthProvider><VideoProcessingProvider>{children}</VideoProcessingProvider></AuthProvider>
       </body>
     </html>
   );

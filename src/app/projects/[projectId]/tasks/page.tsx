@@ -49,7 +49,7 @@ export default async function ProjectTasksPage({
     usersError = true;
   }
   try {
-    const endpoint = process.env.PROJECTS_API_URL ?? "http://localhost:4000/api/v1/projects";
+    const endpoint = process.env.PROJECTS_API_URL ?? `${process.env.API_URL ?? "http://localhost:4000"}/api/projects`;
     const { data } = await api.get<unknown>(endpoint);
     projectName = findProjectName(data, projectId) ?? projectName;
   } catch {

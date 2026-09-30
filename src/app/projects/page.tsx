@@ -58,7 +58,7 @@ export const metadata = {
 export default async function Page({ searchParams }: { searchParams: Promise<{ name?: string | string[] }> }) {
   const params = await searchParams;
   const name = Array.isArray(params.name) ? params.name[0] : params.name;
-  const endpoint = process.env.PROJECTS_API_URL ?? "http://localhost:4000/api/v1/projects";
+  const endpoint = process.env.PROJECTS_API_URL ?? `${process.env.API_URL ?? "http://localhost:4000"}/api/projects`;
   let projects: Project[] = [];
   let loadError = false;
   let users = [] as Awaited<ReturnType<typeof getUsers>>;

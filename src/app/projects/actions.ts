@@ -3,7 +3,7 @@
 import { api } from "@/lib/api";
 
 const endpoint = () =>
-  process.env.PROJECTS_API_URL ?? "http://localhost:4000/api/v1/projects";
+  process.env.PROJECTS_API_URL ?? `${process.env.API_URL ?? "http://localhost:4000"}/api/projects`;
 
 async function request(path: string, method: "POST" | "PATCH" | "DELETE", body: unknown) {
   const response = await api.request({ url: path, method, data: body });

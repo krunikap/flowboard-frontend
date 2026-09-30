@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { Task } from "@/lib/store";
 import { api } from "@/lib/api";
 
-const tasksEndpoint = () => process.env.TASKS_API_URL ?? "http://localhost:4000/api/v1/tasks";
+const tasksEndpoint = () => process.env.TASKS_API_URL ?? `${process.env.API_URL ?? "http://localhost:4000"}/api/tasks`;
 
 function unwrap(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload;

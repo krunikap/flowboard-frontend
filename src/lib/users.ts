@@ -47,7 +47,7 @@ function toUser(value: unknown): User | null {
 }
 
 export async function getUsers(search?: string): Promise<User[]> {
-  const endpoint = process.env.USERS_API_URL ?? "http://localhost:4000/api/v1/users";
+  const endpoint = process.env.USERS_API_URL ?? `${process.env.API_URL ?? "http://localhost:4000"}/api/users`;
   const { data } = await api.get<unknown>(endpoint, {
     params: { page: 1, limit: 25, ...(search ? { search } : {}) },
   });
