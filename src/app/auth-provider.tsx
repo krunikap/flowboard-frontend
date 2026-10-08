@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { getCurrentUser, login as loginRequest, register as registerRequest, type AuthUser } from "@/lib/auth";
+import { getCurrentUser, login as loginRequest, logout as logoutRequest, register as registerRequest, type AuthUser } from "@/lib/auth";
 
 const TOKEN_KEY = "flowboard.auth.token";
 function clearStoredToken() {
@@ -13,7 +13,7 @@ type AuthContextValue = {
   token: string | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, name: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
 };
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const acceptSession = useCallback(async (nextToken: string, suppliedUser?: AuthUser) => {
     setToken(nextToken);
-    try { window.localStorage.setItem(TOKEN_KEY, nextToken); } catch { /* Keep this session in memory for the current tab. */ }
+    try { window.localStorage.setItem(TOKEN_KEY, nextToken); if (suppliedUser) window.localStorage.setItem("flowboard.auth.user", JSON.stringify(suppliedUser)); } catch { /* Keep this session in memory for the current tab. */ }
     try {
       const currentUser = await getCurrentUser(nextToken);
       setUser(currentUser);
@@ -74,15 +74,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const result = await loginRequest(email, password);
     await acceptSession(result.token, result.user);
   }, [acceptSession]);
-  const signUp = useCallback(async (email: string, name: string, password: string) => {
-    const result = await registerRequest(email, name, password);
-    await acceptSession(result.token, result.user);
-  }, [acceptSession]);
+  const signUp = useCallback(async (name: string, email: string, password: string) => {
+    await registerRequest(name, email, password);
+  }, []);
   const signOut = useCallback(() => {
+    if (token) void logoutRequest(token);
     clearStoredToken();
+    try { window.localStorage.removeItem("flowboard.auth.user"); } catch { /* Storage may be disabled. */ }
     setToken(null);
     setUser(null);
-  }, []);
+  }, [token]);
 
   const value = useMemo(() => ({ user, token, isLoading, signIn, signUp, signOut }), [user, token, isLoading, signIn, signUp, signOut]);
   return (
@@ -95,14 +96,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 function AuthRouteGate({ isLoading, user, children }: { isLoading: boolean; user: AuthUser | null; children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isLoginPage = pathname === "/login";
+  const isAuthPage = pathname === "/login" || pathname === "/register";
 
   useEffect(() => {
-    if (!isLoading && !user && !isLoginPage) router.replace("/login");
-    if (!isLoading && user && isLoginPage) router.replace("/projects");
-  }, [isLoading, user, isLoginPage, router]);
+    if (!isLoading && !user && !isAuthPage) router.replace("/login");
+    if (!isLoading && user && isAuthPage) router.replace("/");
+  }, [isLoading, user, isAuthPage, router]);
 
-  if (isLoading || (!user && !isLoginPage) || (user && isLoginPage)) {
+  if (isLoading || (!user && !isAuthPage) || (user && isAuthPage)) {
     return <main className="grid min-h-screen place-items-center bg-slate-50 text-sm text-slate-500" role="status">{isLoading ? "Restoring your session…" : "Opening your workspace…"}</main>;
   }
   return children;
