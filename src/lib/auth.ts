@@ -1,12 +1,19 @@
 import axios from "axios";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+// AI Document Intelligence API (FastAPI). Every route lives under /api/v1.
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1").replace(/\/$/, "");
 export type AuthUser = { id: number; name?: string | null; email: string; created_at?: string; updated_at?: string };
 function message(error: unknown) {
   if (axios.isAxiosError(error)) {
-    const body = error.response?.data as { detail?: string; message?: string } | string | undefined;
+    // The API answers errors as { status, message, data, error }; validation errors list fields in `error`.
+    const body = error.response?.data as { message?: string; error?: unknown } | string | undefined;
     if (typeof body === "string") return body;
-    if (body?.detail) return body.detail;
+    if (Array.isArray(body?.error)) {
+      const fields = body.error
+        .map((item: { field?: string; message?: string }) => (item.field ? `${item.field}: ${item.message}` : item.message))
+        .filter(Boolean);
+      if (fields.length) return fields.join(" ");
+    }
     if (body?.message) return body.message;
     if (!error.response) return "Could not reach the API server at " + API_URL;
   }
@@ -15,7 +22,7 @@ function message(error: unknown) {
 export async function login(email: string, password: string) {
   try {
     const response = await axios.post(`${API_URL}/auth/login`, { email, password }, { headers: { "Content-Type": "application/json" } });
-    return { token: response.data.access_token as string, user: response.data.user as AuthUser };
+    return { token: response.data.data.access_token as string, user: response.data.data.user as AuthUser };
   } catch (error) { throw new Error(message(error)); }
 }
 export async function register(name: string, email: string, password: string) {
